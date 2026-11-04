@@ -1,0 +1,39 @@
+# 冒烟测试配置：快速验证环境与链码连通（每个场景只跑 2 笔，预置 3 台设备）。
+# 跑通后再跑 config.yaml 的正式压测。
+test:
+  name: iotcc-smoke
+  description: iot_chaincode (iotcc) 冒烟测试（验证 Caliper 与链码连通）
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    - label: smoke-upload-data-hash
+      description: 数据上链 UploadDataHash（写）
+      txNumber: 2
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: workload/iotcc-workload.js
+        arguments:
+          contractId: iotcc
+          function: UploadDataHash
+          deviceCount: 3
+          devicePrefix: smoke
+
+    - label: smoke-query-device
+      description: 设备查询 QueryDevice（读）
+      txNumber: 2
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: workload/iotcc-workload.js
+        arguments:
+          contractId: iotcc
+          function: QueryDevice
+          deviceCount: 3
+          devicePrefix: smoke

@@ -1,0 +1,10 @@
+{
+  "name": "iotcc-caliper",
+  "version": "1.0.0",
+  "description": "Hyperledger Caliper 压测工作区 for iot_chaincode (iotcc)",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@hyperledger/caliper-cli": "0.6.0",
+    "fabric-network": "2.2.20"
+  }
+}

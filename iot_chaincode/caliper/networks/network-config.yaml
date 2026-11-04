@@ -1,0 +1,30 @@
+# Caliper 网络配置（network config），由 caliper launch --caliper-networkconfig 指定。
+#
+#   channelName : mychannel     —— 与 deploy.sh 一致（已 `peer lifecycle chaincode querycommitted` 确认）
+#   contract id : iotcc        —— 与 deploy.sh 的 -n iotcc 一致（当前已部署 v1.0，见 commit 输出）
+#   身份        : Org1 Admin    —— 链码所有写操作 requireAdmin() 仅允许 Org1MSP，故用 Org1 Admin 调用
+#   连接拓扑    : 见 connection-profile.yaml（含 peer0.org2 + orderer，满足 MAJORITY 背书）
+name: iotcc-network
+version: "2.0.0"
+
+caliper:
+  blockchain: fabric
+
+channels:
+  - channelName: mychannel
+    contracts:
+      - id: iotcc
+        contractID: iotcc
+
+organizations:
+  - mspid: Org1MSP
+    identities:
+      certificates:
+        - name: Admin@org1.example.com
+          admin: true
+          clientSignedCert:
+            path: /home/ljx/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem
+          clientPrivateKey:
+            path: /home/ljx/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/priv_sk
+    connectionProfile:
+      path: /home/ljx/fabric-samples/chaincode/iot_chaincode/caliper/networks/connection-profile.yaml

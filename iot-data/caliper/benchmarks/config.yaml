@@ -1,0 +1,92 @@
+# iot-data 链码性能测试 benchmark 配置
+# 与 测试方案卡.md 的场景/阈值对应：
+#   S1 数据上链(ReportData)  S2 设备注册(RegisterDevice)  S3 数据查询(GetDeviceData)  S4 混合负载
+#
+# 每个 round 的 workload.arguments.devicePrefix 各不相同，使每轮自包含（init 阶段自行预置设备），
+# 可重复运行、互不依赖。
+test:
+  name: iot-data-benchmark
+  description: iot-data 链码性能测试（S1 数据上链 / S2 设备注册 / S3 数据查询 / S4 混合负载）
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    - label: s1-report-data
+      description: S1 数据上链 ReportData（写，含 ECDSA 验签，MAJORITY 背书）
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: ReportData
+          deviceCount: 100
+          devicePrefix: bench-s1
+          dataType: temperature
+          value: '25.5'
+
+    - label: s2-register-device
+      description: S2 设备注册 RegisterDevice（写，MAJORITY 背书）
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: RegisterDevice
+          deviceCount: 100
+          devicePrefix: bench-s2
+
+    - label: s3-get-device-data
+      description: S3 数据查询 GetDeviceData（读，单 peer）
+      txNumber: 200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: GetDeviceData
+          deviceCount: 100
+          devicePrefix: bench-s3
+          dataType: temperature
+          value: '25.5'
+
+    - label: s4-mixed
+      description: S4 混合负载 ReportData + GetDeviceData（读写比 8:2）
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: Mixed
+          deviceCount: 100
+          devicePrefix: bench-s4
+          dataType: temperature
+          value: '26.0'
+          readRatio: 0.2
+
+# 资源占用为辅助指标（不计入判定）。如需采集 CPU/内存，取消下面注释并核对 monitor 容器名。
+# monitor:
+#   type: docker
+#   docker:
+#     containers:
+#       - peer0.org1.example.com
+#       - peer0.org2.example.com
+#       - orderer.example.com
+# observer:
+#   type: local
+#   interval: 1

@@ -1,0 +1,47 @@
+# 任务三基准测试配置（写入 + 查询 两轮）
+# 与方案卡 S1/S3 对应，但按任务三要求使用更激进的速率：
+#   写入场景 ReportData    : tps=50、txNumber=500
+#   查询场景 GetDeviceData : tps=100、txDuration=60s（时间驱动，与 txNumber 互斥）
+#
+# 每轮 devicePrefix 不同，使每轮自包含（init 阶段自行 注册→激活→上报 预置设备），可重复运行。
+test:
+  name: iot-data-task3
+  description: 任务三基准测试（写入 ReportData + 查询 GetDeviceData）
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    - label: write-report-data
+      description: 写入场景 ReportData（含 ECDSA 验签，MAJORITY 背书），tps=50、txNumber=500
+      txNumber: 500
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: ReportData
+          deviceCount: 100
+          devicePrefix: task3-write
+          dataType: temperature
+          value: '25.5'
+
+    - label: query-get-device-data
+      description: 查询场景 GetDeviceData（读，单 peer），tps=100、txDuration=60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: GetDeviceData
+          deviceCount: 100
+          devicePrefix: task3-query
+          dataType: temperature
+          value: '25.5'

@@ -1,0 +1,62 @@
+# Fabric 连接配置（Connection Profile / CCP）
+# 由 networks/network-config.yaml 的 organizations[].connectionProfile.path 引用。
+#
+# 静态 CCP（不启用服务发现），因此显式列出 peer0.org1 + peer0.org2 + orderer，
+# 保证 MAJORITY 背书策略（2 组织各 1 peer，invoke 需 2 个 peer 共同背书）得到满足。
+#
+# 端点与证书路径已对照 test-network 实际环境核对：
+#   peer0.org1 -> grpcs://localhost:7051
+#   peer0.org2 -> grpcs://localhost:9051
+#   orderer    -> grpcs://localhost:7050
+# 均带 ssl-target-name-override（证书 CN 为 *.example.com，客户端连 localhost 需覆盖校验主机名）。
+name: iot-data-ccp
+version: 1.0.0
+
+client:
+  organization: Org1MSP
+  connection:
+    timeout:
+      peer:
+        endorser: '300'
+
+channels:
+  mychannel:
+    orderers:
+      - orderer.example.com
+    peers:
+      peer0.org1.example.com: {}
+      peer0.org2.example.com: {}
+
+organizations:
+  Org1MSP:
+    mspid: Org1MSP
+    peers:
+      - peer0.org1.example.com
+      - peer0.org2.example.com
+  Org2MSP:
+    mspid: Org2MSP
+    peers:
+      - peer0.org1.example.com
+      - peer0.org2.example.com
+
+orderers:
+  orderer.example.com:
+    url: grpcs://localhost:7050
+    grpcOptions:
+      ssl-target-name-override: orderer.example.com
+    tlsCACerts:
+      path: /home/ljx/fabric-samples/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+
+peers:
+  peer0.org1.example.com:
+    url: grpcs://localhost:7051
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+    tlsCACerts:
+      path: /home/ljx/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+  peer0.org2.example.com:
+    url: grpcs://localhost:9051
+    grpcOptions:
+      ssl-target-name-override: peer0.org2.example.com
+    tlsCACerts:
+      path: /home/ljx/fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt

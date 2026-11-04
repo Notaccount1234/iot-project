@@ -1,0 +1,26 @@
+# 查询场景单独重跑配置（tps=100、txDuration=60s）
+# 与 task3-config.yaml 的 query-get-device-data 轮一致，只是只含这一轮。
+test:
+  name: iot-data-query-tps100
+  description: 查询场景 GetDeviceData（读，单 peer），tps=100、txDuration=60s
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    - label: query-get-device-data
+      description: 查询场景 GetDeviceData，tps=100、txDuration=60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: GetDeviceData
+          deviceCount: 100
+          devicePrefix: tps100
+          dataType: temperature
+          value: '25.5'

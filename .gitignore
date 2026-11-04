@@ -1,0 +1,13 @@
+# 依赖（可用 npm install / caliper bind 重新生成）
+node_modules/
+
+# Caliper 生成物
+report*.html
+*.log
+
+# 备份文件
+*.bak
+
+# 系统
+.DS_Store
+Thumbs.db

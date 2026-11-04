@@ -1,0 +1,34 @@
+# Caliper 网络配置（network config），由 caliper launch --caliper-networkconfig 指定。
+#
+# 逐项核对结果：
+#   channelName: mychannel        —— 与 acceptance-test.sh/env.sh 一致（已 `peer chaincode list --instantiated -C mychannel` 确认通道存在）
+#   contract id : iot-data        —— 与 `-n iot-data` 一致（当前未部署，跑测前需先 deployCC，见方案卡 §8）
+#   身份         : Org1 Admin     —— 设备 owner，RegisterDevice/ReportData/GetDeviceData 均以 owner 身份调用
+#   连接拓扑     : 见 connection-profile.yaml（含 peer0.org2 + orderer，满足 MAJORITY 背书）
+#
+# 注：Caliper 0.6.0 中「网络配置」与「连接配置(CCP)」是两个独立文件，
+#     本文件的 organizations[].connectionProfile.path 指向 CCP。
+name: iot-data-network
+version: "2.0.0"
+
+caliper:
+  blockchain: fabric
+
+channels:
+  - channelName: mychannel
+    contracts:
+      - id: iot-data
+        contractID: iot-data
+
+organizations:
+  - mspid: Org1MSP
+    identities:
+      certificates:
+        - name: Admin@org1.example.com
+          admin: true
+          clientSignedCert:
+            path: /home/ljx/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem
+          clientPrivateKey:
+            path: /home/ljx/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/priv_sk
+    connectionProfile:
+      path: /home/ljx/fabric-samples/iot-data/caliper/networks/connection-profile.yaml

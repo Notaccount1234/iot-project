@@ -1,0 +1,88 @@
+# iot_chaincode (iotcc) 性能压测 benchmark 配置
+#
+# 场景（对齐 iot-data 方案卡的场景划分）：
+#   S1 数据上链 UploadDataHash（写，MAJORITY 背书，核心 IoT 写路径）
+#   S2 设备注册 AddDevice（写，MAJORITY 背书）
+#   S3 设备查询 QueryDevice（读，单 peer）
+#   S4 混合负载 UploadDataHash + QueryDevice（读写比 8:2）
+#
+# 每个 round 的 workload.arguments.devicePrefix 各不相同，使每轮自包含
+# （init 阶段自行预置用户/设备），可重复运行、互不依赖。
+#
+# 速率先给保守值，可据结果调整：写类单机 2-peer 通常 20~50 TPS，读类 100~300 TPS。
+test:
+  name: iotcc-benchmark
+  description: iot_chaincode (iotcc) 性能压测（S1 数据上链 / S2 设备注册 / S3 设备查询 / S4 混合负载）
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    - label: s1-upload-data-hash
+      description: S1 数据上链 UploadDataHash（写，含过期授权校验，MAJORITY 背书）
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/iotcc-workload.js
+        arguments:
+          contractId: iotcc
+          function: UploadDataHash
+          deviceCount: 50
+          devicePrefix: bench-s1
+
+    - label: s2-add-device
+      description: S2 设备注册 AddDevice（写，MAJORITY 背书）
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workload/iotcc-workload.js
+        arguments:
+          contractId: iotcc
+          function: AddDevice
+          devicePrefix: bench-s2
+
+    - label: s3-query-device
+      description: S3 设备查询 QueryDevice（读，单 peer）
+      txNumber: 200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/iotcc-workload.js
+        arguments:
+          contractId: iotcc
+          function: QueryDevice
+          deviceCount: 50
+          devicePrefix: bench-s3
+
+    - label: s4-mixed
+      description: S4 混合负载 UploadDataHash + QueryDevice（读写比 8:2）
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 30
+      workload:
+        module: workload/iotcc-workload.js
+        arguments:
+          contractId: iotcc
+          function: Mixed
+          deviceCount: 50
+          devicePrefix: bench-s4
+          readRatio: 0.2
+
+# 资源占用为辅助指标（不计入判定）。如需采集 CPU/内存，取消下面注释并核对 monitor 容器名。
+# monitor:
+#   type: docker
+#   docker:
+#     containers:
+#       - peer0.org1.example.com
+#       - peer0.org2.example.com
+#       - orderer.example.com

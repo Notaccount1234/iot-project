@@ -1,0 +1,38 @@
+# 单变量敏感性分析：查询场景 tps 100 → 300
+# 其余全部保持不变（txDuration=60s、1 worker、deviceCount=100），仅改 tps。
+# 同时启用 docker 资源监控（1s 采样），用于回答「资源瓶颈」。
+test:
+  name: iot-data-query-tps300
+  description: 查询场景 GetDeviceData，tps=300、txDuration=60s（变量实验：tps 100→300）
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    - label: query-get-device-data
+      description: 查询场景 GetDeviceData，tps=300、txDuration=60s
+      txDuration: 60
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 300
+      workload:
+        module: workload/iotdata-workload.js
+        arguments:
+          contractId: iot-data
+          function: GetDeviceData
+          deviceCount: 100
+          devicePrefix: tps300
+          dataType: temperature
+          value: '25.5'
+
+# 资源监控：docker 方式采集 peer0.org1/peer0.org2/orderer 的 CPU 与内存（1s 采样）
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 1
+        containers:
+          - peer0.org1.example.com
+          - peer0.org2.example.com
+          - orderer.example.com
